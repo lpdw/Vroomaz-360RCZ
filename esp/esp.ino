@@ -1,18 +1,20 @@
 #include <SoftwareSerial.h>
 #include <ESP8266WiFi.h>
 
-SoftwareSerial mySerial(0, 2);
+#include "pindef-nodemcu1.0.h"
+
+SoftwareSerial espSerial(SD3, SD2);  // RX, TX
 WiFiServer server(80);
 
 int vitesse = 700;
 
-int motor1_enablePin = 14; //pwm
-int motor1_in1Pin = 16;
-int motor1_in2Pin = 5;
+int motor1_enablePin = D7; //pwm
+int motor1_in1Pin = D5;
+int motor1_in2Pin = D6;
 
-int motor2_enablePin = 12; //pwm
-int motor2_in1Pin = 4;
-int motor2_in2Pin = 13;
+int motor2_enablePin = D0; //pwm
+int motor2_in1Pin = D2;
+int motor2_in2Pin = D1;
 
 int driveMode = 0; //0:man 1:auto
 
@@ -33,7 +35,7 @@ void setup() {
   pinMode(motor2_enablePin, OUTPUT);
 
   Serial.begin(9600);
-  mySerial.begin(9600);
+  espSerial.begin(9600);
 
   while (!Serial) {
     ;
@@ -68,11 +70,11 @@ void loop() {
   WiFiClient client = server.available();
   if (!client) {
     if (driveMode == 1) {
-      go();
-      if (mySerial.available()) {
-        Serial.write(mySerial.read());
+      start();
+      if (espSerial.available()) {
+        Serial.write(espSerial.read());
 
-        if (mySerial.read() < 1) {
+        if (espSerial.read() < 1) {
           stopp();
           left();
           delay(250);
@@ -102,7 +104,7 @@ void loop() {
   if (driveMode == 0) {
     Serial.println("Man");
     if (req.indexOf("/start") != -1) {
-      go();
+      start();
     }
     else if (req.indexOf("/stop") != -1) {
       stopp();
@@ -115,10 +117,10 @@ void loop() {
     else if (req.indexOf("/slower") != -1) {
     }
     else if (req.indexOf("/right") != -1) {
-      left();
+      right();
     }
     else if (req.indexOf("/left") != -1) {
-      right();
+      left();
     }
     else {
       Serial.println("invalid request");
@@ -144,38 +146,38 @@ void loop() {
 
 
 
-void go() {
+void start() {
   analogWrite(motor1_enablePin, vitesse);
-  digitalWrite(motor1_in1Pin, false);
-  digitalWrite(motor1_in2Pin, true);
+  digitalWrite(motor1_in1Pin, true);
+  digitalWrite(motor1_in2Pin, false);
   analogWrite(motor2_enablePin, vitesse);
-  digitalWrite(motor2_in1Pin, false);
-  digitalWrite(motor2_in2Pin, true);
+  digitalWrite(motor2_in1Pin, true);
+  digitalWrite(motor2_in2Pin, false);
 }
 
 void stopp() {
   analogWrite(motor1_enablePin, vitesse);
-  digitalWrite(motor1_in1Pin, true);
-  digitalWrite(motor1_in2Pin, false);
-  analogWrite(motor2_enablePin, vitesse);
-  digitalWrite(motor2_in1Pin, true);
-  digitalWrite(motor2_in2Pin, false);
-  delay(100);
-  analogWrite(motor1_enablePin, 0);
   digitalWrite(motor1_in1Pin, false);
   digitalWrite(motor1_in2Pin, true);
-  analogWrite(motor2_enablePin, 0);
+  analogWrite(motor2_enablePin, vitesse);
   digitalWrite(motor2_in1Pin, false);
   digitalWrite(motor2_in2Pin, true);
+  delay(100);
+  analogWrite(motor1_enablePin, 0);
+  digitalWrite(motor1_in1Pin, true);
+  digitalWrite(motor1_in2Pin, false);
+  analogWrite(motor2_enablePin, 0);
+  digitalWrite(motor2_in1Pin, true);
+  digitalWrite(motor2_in2Pin, false);
 }
 
 void back() {
   analogWrite(motor1_enablePin, vitesse);
-  digitalWrite(motor1_in1Pin, true);
-  digitalWrite(motor1_in2Pin, false);
+  digitalWrite(motor1_in1Pin, false);
+  digitalWrite(motor1_in2Pin, true);
   analogWrite(motor2_enablePin, vitesse);
-  digitalWrite(motor2_in1Pin, true);
-  digitalWrite(motor2_in2Pin, false);
+  digitalWrite(motor2_in1Pin, false);
+  digitalWrite(motor2_in2Pin, true);
 }
 
 void right() {

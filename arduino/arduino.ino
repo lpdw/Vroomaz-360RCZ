@@ -12,7 +12,7 @@
 
 #define MAX_DISTANCE 200 // Maximum distance we want to ping for (in centimeters). Maximum sensor distance is rated at 400-500cm.
 
-SoftwareSerial mySerial(5, 6); // RX:5, TX:6
+SoftwareSerial espSerial(5, 6); // RX:5, TX:6
 NewPing sonar1(TRIGGER_PIN1, ECHO_PIN1, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
 NewPing sonar2(TRIGGER_PIN2, ECHO_PIN2, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
 NewPing sonar3(TRIGGER_PIN3, ECHO_PIN3, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
@@ -20,7 +20,10 @@ NewPing sonar3(TRIGGER_PIN3, ECHO_PIN3, MAX_DISTANCE); // NewPing setup of pins 
 void setup() {
 
   Serial.begin(9600);
-  mySerial.begin(9600);
+  espSerial.begin(9600);
+
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
 
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
@@ -30,13 +33,16 @@ void setup() {
 
 void loop() { // run over and over
   if (sonar1.ping_cm() < 80 && sonar1.ping_cm() > 0) {
-    mySerial.println(0);
+    Serial.println("Sonar 1");
+    espSerial.println(0);
   }
   if (sonar2.ping_cm() < 80 && sonar2.ping_cm() > 0) {
-    mySerial.println(0);
+    Serial.println("Sonar 2");
+    espSerial.println(0);
   }
   if (sonar3.ping_cm() < 80 && sonar3.ping_cm() > 0) {
-    mySerial.println(0);
+    Serial.println("Sonar 3");
+    espSerial.println(0);
   }
   delay(100);
 }
