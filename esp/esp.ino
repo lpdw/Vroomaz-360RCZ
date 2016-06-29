@@ -6,7 +6,12 @@
 SoftwareSerial espSerial(SD3, SD2);  // RX, TX
 WiFiServer server(80);
 
-int vitesse = 700;
+int motor_speed;
+int speed_default = 700;
+int speed_turn = 1023;
+
+// last command, used to stop correctly
+String last_command = "start";
 
 int motor1_enablePin = D7; //pwm
 int motor1_in1Pin = D5;
@@ -70,13 +75,13 @@ void loop() {
   WiFiClient client = server.available();
   if (!client) {
     if (driveMode == 1) {
-      start();
+      start(speed_default);
       if (espSerial.available()) {
         Serial.write(espSerial.read());
 
         if (espSerial.read() < 1) {
-          stopp();
-          left();
+          stopp(speed_default);
+          left(speed_turn);
           delay(250);
         }
       }
@@ -104,23 +109,19 @@ void loop() {
   if (driveMode == 0) {
     Serial.println("Man");
     if (req.indexOf("/start") != -1) {
-      start();
+      start(speed_default);
     }
     else if (req.indexOf("/stop") != -1) {
-      stopp();
+      stopp(speed_default);
     }
     else if (req.indexOf("/back") != -1) {
-      back();
-    }
-    else if (req.indexOf("/faster") != -1) {
-    }
-    else if (req.indexOf("/slower") != -1) {
+      back(speed_default);
     }
     else if (req.indexOf("/right") != -1) {
-      right();
+      right(speed_turn);
     }
     else if (req.indexOf("/left") != -1) {
-      left();
+      left(speed_turn);
     }
     else {
       Serial.println("invalid request");
@@ -146,53 +147,68 @@ void loop() {
 
 
 
-void start() {
-  analogWrite(motor1_enablePin, vitesse);
+void start(int motor_speed) {
+  last_command = "start";
+  analogWrite(motor1_enablePin, motor_speed);
   digitalWrite(motor1_in1Pin, true);
   digitalWrite(motor1_in2Pin, false);
-  analogWrite(motor2_enablePin, vitesse);
+  analogWrite(motor2_enablePin, motor_speed);
   digitalWrite(motor2_in1Pin, true);
   digitalWrite(motor2_in2Pin, false);
 }
 
-void stopp() {
-  analogWrite(motor1_enablePin, vitesse);
-  digitalWrite(motor1_in1Pin, false);
-  digitalWrite(motor1_in2Pin, true);
-  analogWrite(motor2_enablePin, vitesse);
-  digitalWrite(motor2_in1Pin, false);
-  digitalWrite(motor2_in2Pin, true);
-  delay(100);
-  analogWrite(motor1_enablePin, 0);
-  digitalWrite(motor1_in1Pin, true);
-  digitalWrite(motor1_in2Pin, false);
-  analogWrite(motor2_enablePin, 0);
-  digitalWrite(motor2_in1Pin, true);
-  digitalWrite(motor2_in2Pin, false);
+void stopp(int motor_speed) {
+  if (last_command == "left")
+  {
+    right(speed_turn); //TODO : replace by motor_speed
+    delay(100);
+    left(0);
+  }
+  else if (last_command == "right")
+  {
+    left(speed_turn); //TODO : replace by motor_speed
+    delay(100);
+    right(0);
+  }
+  else if (last_command == "back")
+  {
+    start(motor_speed);
+    delay(100);
+    back(0);  
+  }
+  else
+  {
+    back(motor_speed);
+    delay(100);
+    start(0);
+  }
 }
 
-void back() {
-  analogWrite(motor1_enablePin, vitesse);
+void back(int motor_speed) {
+  last_command = "back";
+  analogWrite(motor1_enablePin, motor_speed);
   digitalWrite(motor1_in1Pin, false);
   digitalWrite(motor1_in2Pin, true);
-  analogWrite(motor2_enablePin, vitesse);
+  analogWrite(motor2_enablePin, motor_speed);
   digitalWrite(motor2_in1Pin, false);
   digitalWrite(motor2_in2Pin, true);
 }
 
-void right() {
-  analogWrite(motor1_enablePin, 1023);
+void right(int motor_speed) {
+  last_command = "right";
+  analogWrite(motor1_enablePin, motor_speed);
   digitalWrite(motor1_in1Pin, true);
   digitalWrite(motor1_in2Pin, false);
-  analogWrite(motor2_enablePin, 1023);
+  analogWrite(motor2_enablePin, motor_speed);
   digitalWrite(motor2_in1Pin, false);
   digitalWrite(motor2_in2Pin, true);
 }
-void left() {
-  analogWrite(motor1_enablePin, 1023);
+void left(int motor_speed) {
+  last_command = "left";
+  analogWrite(motor1_enablePin, motor_speed);
   digitalWrite(motor1_in1Pin, false);
   digitalWrite(motor1_in2Pin, true);
-  analogWrite(motor2_enablePin, 1023);
+  analogWrite(motor2_enablePin, motor_speed);
   digitalWrite(motor2_in1Pin, true);
   digitalWrite(motor2_in2Pin, false);
 }
