@@ -65,17 +65,17 @@ void loop() { // run over and over
   lineSensorRight = digitalRead(lineSensorRightPin);
   if (lineSensorRight == LOW && lineSensorLeft == HIGH)
   {
-    //Serial.println("Ligne à droite - tourner à droite");
+    //Serial.println("Ligne à droite - tourner à droite (inversé donc à gauche)");
     espSerial.write(6); //6 = right, as it is on a numpad
   }
   else if (lineSensorRight == LOW && lineSensorLeft == LOW)
   {
-    //Serial.println("Ligne au millieu - aller tout droit");
+    //Serial.println("Ligne au millieu - aller tout droit (inversé donc reculer)");
      espSerial.write(8); //8 = up, as it is on a numpad
   }
   else if (lineSensorRight == HIGH && lineSensorLeft == LOW)
   {
-    //Serial.println("Ligne à gauche - tourner à gauche");
+    //Serial.println("Ligne à gauche - tourner à gauche (inversé donc à droite)");
     espSerial.write(4); //4 = left, as it is on a numpad
   }
   else

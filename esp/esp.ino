@@ -5,15 +5,10 @@
 
 #define STATIC_IP false
 // Update these with values suitable for your network.
-//IPAddress ip(192,168,1,239);  //Node static IP 
-//IPAddress gateway(192,168,1,1);
-//IPAddress subnet(255,255,255,0);
-//172.24.1.122
-
-//172.16.13.216
-IPAddress ip(172,16,13,216);  //Node static IP 
-IPAddress gateway(172,16,13,254);
+IPAddress ip(192,168,1,239);  //Node static IP 
+IPAddress gateway(192,168,1,1);
 IPAddress subnet(255,255,255,0);
+//172.24.1.122
 
 SoftwareSerial arduinoSerial(D3, D4);  // RX, TX
 WiFiServer server(80);
@@ -21,6 +16,8 @@ WiFiServer server(80);
 int motor_speed;
 int speed_default = 700;
 int speed_turn = 1023;
+int speed_slower = 550;
+int speed_turn_slower = 1023; 
 
 // last command, used to stop correctly
 String last_command = "start";
@@ -33,12 +30,12 @@ int motor2_enablePin = D6; //pwm
 int motor2_in1Pin = D2;
 int motor2_in2Pin = D7;
 
-int driveMode = 0; //0:man 1:auto
+int driveMode = 0; //0:man 1:auto 2:line
 
 //const char* ssid = "LPDW-IOT";
 //const char* password = "LPDWIOTROUTER2015";
-//const char* ssid = "raspberrypi-vroomaz";
-//const char* password = "raspberrypi-vroomaz";
+const char* ssid = "raspberrypi-vroomaz";
+const char* password = "raspberrypi-vroomaz";
 
 void setup() {
 
@@ -91,18 +88,50 @@ void loop() {
   // Check if a client is connected
   WiFiClient client = server.available();
   if (!client) {
-    if (driveMode == 1) {
+    if (driveMode == 1) {    
       start(speed_default);
       if (arduinoSerial.available()) {
         
 
         int arduinoSerialValue = arduinoSerial.read();
 
-        Serial.write(arduinoSerialValue);
+        Serial.println(arduinoSerialValue);
 
         if (arduinoSerialValue == 1 || arduinoSerialValue == 2 || arduinoSerialValue == 3) {
-          if (previousArduinoSerialValue != arduinoSerialValue) stopp(speed_default);
+          stopp(speed_default);
+          delay(50);
           left(speed_turn);
+          delay(250);
+        }
+      }
+    } else if (driveMode == 2) {
+      
+      start(speed_slower);
+      if (arduinoSerial.available()) {
+
+        int arduinoSerialValue = arduinoSerial.read();
+
+        Serial.println(arduinoSerialValue);
+
+        if (arduinoSerialValue == 8) { //8 = up, as it is on a numpad
+          stopp(speed_slower);
+          delay(50);
+          back(speed_slower);
+          delay(100);
+        } else if (arduinoSerialValue == 6) { //6 = right, as it is on a numpad
+          stopp(speed_slower);
+          delay(50);
+          left(speed_slower);
+          delay(100);
+        } else if (arduinoSerialValue == 4) { //4 = left, as it is on a numpad
+          stopp(speed_slower);
+          delay(50);
+          right(speed_slower);
+          delay(100);          
+        } else if (arduinoSerialValue == 9) { //9 = nothing
+          delay(50);
+          back(speed_slower);
+          delay(100);
         }
       }
     }
@@ -126,16 +155,21 @@ void loop() {
   else if (req.indexOf("/mode/auto") != -1) {
     driveMode = 1;
   }
+  else if (req.indexOf("/mode/line") != -1) {
+    driveMode = 2;
+  }
+
+  //Start and stop command available for all
+  if (req.indexOf("/start") != -1) {
+    start(speed_default);
+  }
+  else if (req.indexOf("/stop") != -1) {
+    stopp(speed_default);
+  }
 
   if (driveMode == 0) {
     Serial.println("Man");
-    if (req.indexOf("/start") != -1) {
-      start(speed_default);
-    }
-    else if (req.indexOf("/stop") != -1) {
-      stopp(speed_default);
-    }
-    else if (req.indexOf("/back") != -1) {
+    if (req.indexOf("/back") != -1) {
       back(speed_default);
     }
     else if (req.indexOf("/right") != -1) {
@@ -179,7 +213,7 @@ void start(int motor_speed) {
 }
 
 void stopp(int motor_speed) {
-  if (driveMode == 0) {
+  if (driveMode == 0 || driveMode == 2) {
     if (last_command == "left")
     {
       right(speed_turn); //TODO : replace by motor_speed
