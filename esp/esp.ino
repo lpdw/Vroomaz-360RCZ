@@ -37,6 +37,11 @@ int driveMode = 0; //0:man 1:auto 2:line
 const char* ssid = "raspberrypi-vroomaz";
 const char* password = "raspberrypi-vroomaz";
 
+unsigned long previousMillis1 = 0;
+const long interval1 = 250;
+unsigned long previousMillis2 = 0;
+const long interval2 = 100;
+
 void setup() {
 
   pinMode(LED_BUILTIN, OUTPUT);
@@ -96,13 +101,24 @@ void loop() {
         int arduinoSerialValue = arduinoSerial.read();
 
         Serial.println(arduinoSerialValue);
+        
+        unsigned long currentMillis1 = millis();
 
         if (arduinoSerialValue == 1 || arduinoSerialValue == 2 || arduinoSerialValue == 3) {
-          stopp(speed_default);
-          delay(50);
-          left(speed_turn);
-          delay(250);
+          if(currentMillis1 - previousMillis1 >= interval1) {
+              previousMillis1 = currentMillis1;
+
+              unsigned long currentMillis2 = millis();
+              if(currentMillis2 - previousMillis2 >= interval1) {
+                previousMillis2 = currentMillis2;
+                stopp(speed_default);
+              }
+              
+              //delay(10);
+              left(speed_turn);
+          }
         }
+        arduinoSerialValue = 0; //clear
       }
     } else if (driveMode == 2) {
       
@@ -112,7 +128,7 @@ void loop() {
         int arduinoSerialValue = arduinoSerial.read();
 
         Serial.println(arduinoSerialValue);
-
+                
         if (arduinoSerialValue == 8) { //8 = up, as it is on a numpad
           stopp(speed_slower);
           delay(50);
@@ -270,9 +286,13 @@ void left(int motor_speed) {
   last_command = "left";
   analogWrite(motor1_enablePin, motor_speed);
   digitalWrite(motor1_in1Pin, true);
+  Serial.println(digitalRead(motor1_in1Pin));
   digitalWrite(motor1_in2Pin, false);
+  Serial.println(digitalRead(motor1_in2Pin));
   analogWrite(motor2_enablePin, motor_speed);
   digitalWrite(motor2_in1Pin, false);
+  Serial.println(digitalRead(motor2_in1Pin));
   digitalWrite(motor2_in2Pin, true);
+  Serial.println(digitalRead(motor2_in2Pin));
 }
 
